@@ -1,0 +1,87 @@
+version: '3.7'
+services:
+  rolldice:
+    build: 
+      context: rolldice
+      dockerfile: rolldice.dockerfile
+    image: zelfick/rolldice
+    restart: always
+    ports: 
+      - '8081:8081'
+    depends_on:
+      - optlcollector
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:8081/flask-health-check || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    command: gunicorn -w 3 -t 60 -b 0.0.0.0:8081 app:app
+    networks:
+      - otelelk
+
+  optlcollector:
+    ports:
+      - '4317:4317'
+    volumes:
+      - '${PWD}/collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml'
+    image: 'otel/opentelemetry-collector-contrib:0.77.0'
+    depends_on:
+      - logstash
+    networks:
+      - otelelk
+
+  elasticsearch:
+    image: elasticsearch:7.16.2
+    container_name: elasticsearch
+    restart: always
+    volumes:
+    - elastic_data:/usr/share/elasticsearch/data/
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      discovery.type: single-node    
+    ports:
+    - '9200:9200'
+    - '9300:9300'
+    networks:
+      - otelelk
+
+  logstash:
+    image: logstash:7.16.2
+    container_name: logstash
+    restart: always
+    volumes:
+    - '${PWD}/elk/logstash/pipeline/:/usr/share/logstash/pipeline/'
+    - '${PWD}/elk/logstash/nginx.log:/usr/share/logstash/nginx.log'
+    command: logstash -f /usr/share/logstash/pipeline/logstash.conf 
+    depends_on:
+      - elasticsearch
+    ports:
+    #- '5044:5044'
+    - '5000:5000/tcp'
+    #- '5000:5000/udp'
+    - '9600:9600'
+    environment:
+      LS_JAVA_OPTS: "-Xms512m -Xmx512m"    
+    networks:
+      - otelelk
+
+  kibana:
+    image: kibana:7.16.2
+    container_name: kibana
+    restart: always       
+    ports:
+    - '5601:5601'
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200  
+    depends_on:
+      - elasticsearch  
+    networks:
+      - otelelk
+
+
+volumes:
+  elastic_data: {}
+
+networks:
+    otelelk:
+      driver: bridge

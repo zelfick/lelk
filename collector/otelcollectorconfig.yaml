@@ -1,0 +1,28 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+#      http:
+exporters:
+#  logging/info:
+#    loglevel: info
+  logging:
+    loglevel: debug
+  otlphttp:
+    endpoint: http://logstash:5000
+
+processors:
+  batch:
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging, otlphttp]
+      processors: [batch]
+    metrics:
+      receivers: [otlp]
+      exporters: [logging, otlphttp]
+      processors: [batch]
+#    logs:
+#      receivers: [oltp]
+#      exporters: [logging]
