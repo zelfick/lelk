@@ -11,6 +11,8 @@ Regards the implementation of Opentelemetry i decided to use opentelemetry colle
 # Opentelemetry Contextual Concepts
 Opentelemetry provides a standard for instrumentation that is independent of the tools, where logs, metrics and traces are collected. One specification,implementation for every programming language, basically has two components:the OpenTelemetry API (which defines how OpenTelemetry is used) and language SDKs (which define the specific implementation of the API for a language) that allows the generatin of observability data.
 
+![Opentelemetry Stack](OtelStack.png)
+
 Telemetry: Compromises the instrumentation ( code ability to emit logs, metrics and traces): 
 - Logs: The application history. Logs can point to a trace
 - Traces: The context of why things are happening (trace events). Traces can have logs inside it.
